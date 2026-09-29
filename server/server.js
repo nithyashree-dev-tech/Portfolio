@@ -1,5 +1,4 @@
-const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
+const { env, validateEnv } = require('./config/env');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -22,17 +21,12 @@ const bcrypt = require('bcryptjs');
 const { profileSeed } = require('./seed/seedData');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = env.port;
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      const configuredOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean);
-      const localDevelopmentOrigin = /^https?:\/\/(localhost|127\.0\.0\.1):(5173|5174)$/.test(origin || '');
-      if (!origin || configuredOrigins.includes(origin) || (process.env.NODE_ENV !== 'production' && localDevelopmentOrigin)) {
+      if (!origin || env.clientOrigins.includes(origin)) {
         return callback(null, true);
       }
       return callback(new Error('Origin is not allowed by CORS'));
@@ -43,11 +37,10 @@ app.use(
 app.use(helmet());
 app.use(express.json({ limit: '1mb' }));
 app.use(morgan('dev'));
-app.use('/uploads/resumes', express.static(process.env.RESUME_UPLOAD_DIR || path.resolve(__dirname, 'uploads', 'resumes')));
 app.use(
   rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
+    windowMs: env.apiRateLimitWindowMs,
+    max: env.apiRateLimitMax,
     standardHeaders: true,
     legacyHeaders: false,
   }),
@@ -69,27 +62,27 @@ app.use('/api/v1/profile', profileRoutes);
 
 app.use(errorHandler);
 
+validateEnv();
 connectDB()
   .then(async () => {
     try {
       await ensureData();
-      if (connectDB.isDatabaseConnected() && process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+      if (connectDB.isDatabaseConnected()) {
         await Admin.findOneAndUpdate(
-          { email: process.env.ADMIN_EMAIL.toLowerCase() },
+          { email: env.adminEmail },
           {
-            email: process.env.ADMIN_EMAIL.toLowerCase(),
-            passwordHash: await bcrypt.hash(process.env.ADMIN_PASSWORD, 12),
+            email: env.adminEmail,
+            passwordHash: await bcrypt.hash(env.adminPassword, 12),
             role: 'admin',
           },
           { upsert: true, new: true, setDefaultsOnInsert: true },
         );
       }
-      if (connectDB.isDatabaseConnected()) {
-        const existingProfile = await Profile.findOne().select('_id').lean();
-        if (!existingProfile) await Profile.create(profileSeed);
-      }
+      const existingProfile = await Profile.findOne().select('_id').lean();
+      if (!existingProfile) await Profile.create(profileSeed);
     } catch (error) {
-      console.warn('Seed check failed:', error.message);
+      console.error('Database initialization failed:', error.message);
+      process.exit(1);
     }
 
     app.listen(PORT, () => {

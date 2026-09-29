@@ -1,10 +1,12 @@
+const { env } = require('../config/env');
+
 const errorHandler = (err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Something went wrong';
 
   res.status(statusCode).json({
     success: false,
-    message: process.env.NODE_ENV === 'production' ? 'Something went wrong' : message,
+    message: env.nodeEnv === 'production' ? 'Something went wrong' : message,
     data: {},
   });
 };

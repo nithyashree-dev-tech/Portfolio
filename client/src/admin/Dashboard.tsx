@@ -60,7 +60,7 @@ const emptyAchievementDraft = {
 
 const emptyProfileDraft = {
   name: '', professionalTitle: '', shortBio: '', longBio: '', email: '', location: '',
-  githubUrl: '', linkedinUrl: '', resumeUrl: '', cloudResumeUrl: '', softwareResumeUrl: '', profileImage: '',
+  githubUrl: '', linkedinUrl: '', resumeUrl: '', cloudResumeFileId: '', softwareResumeFileId: '', profileImage: '',
 };
 
 const dashboardTabs: { key: TabKey; label: string }[] = [
@@ -171,9 +171,9 @@ const Dashboard = () => {
     setError('');
     try {
       const response = await profileService.uploadResume(role, file);
-      const field = role === 'cloud' ? 'cloudResumeUrl' : 'softwareResumeUrl';
-      handleDraftChange(field, response.data.url);
-      setProfile((current) => current ? { ...current, [field]: response.data.url } : current);
+      const field = role === 'cloud' ? 'cloudResumeFileId' : 'softwareResumeFileId';
+      handleDraftChange(field, response.data.fileId);
+      setProfile((current) => current ? { ...current, [field]: response.data.fileId } : current);
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : 'Unable to upload resume.');
     } finally {
@@ -549,12 +549,12 @@ const Dashboard = () => {
           <label>
             Cloud Engineering Resume (PDF)
             <input type="file" accept="application/pdf,.pdf" onChange={(event) => void handleResumeUpload('cloud', event.target.files?.[0])} />
-            <small>{uploadingResume === 'cloud' ? 'Uploading...' : draft.cloudResumeUrl ? 'Cloud resume uploaded.' : 'No cloud resume uploaded.'}</small>
+            <small>{uploadingResume === 'cloud' ? 'Uploading...' : draft.cloudResumeFileId ? 'Cloud resume stored in MongoDB.' : 'No cloud resume uploaded.'}</small>
           </label>
           <label>
             Software Engineering Resume (PDF)
             <input type="file" accept="application/pdf,.pdf" onChange={(event) => void handleResumeUpload('software', event.target.files?.[0])} />
-            <small>{uploadingResume === 'software' ? 'Uploading...' : draft.softwareResumeUrl ? 'Software resume uploaded.' : 'No software resume uploaded.'}</small>
+            <small>{uploadingResume === 'software' ? 'Uploading...' : draft.softwareResumeFileId ? 'Software resume stored in MongoDB.' : 'No software resume uploaded.'}</small>
           </label>
           <label>Profile Image URL<input type="url" value={String(draft.profileImage || '')} onChange={(event) => handleDraftChange('profileImage', event.target.value)} /></label>
         </>

@@ -84,6 +84,8 @@ export type Profile = {
   resumeUrl: string;
   cloudResumeUrl?: string;
   softwareResumeUrl?: string;
+  cloudResumeFileId?: string;
+  softwareResumeFileId?: string;
   profileImage: string;
 };
 

@@ -84,6 +84,8 @@ const profileSeed = {
   resumeUrl: '',
   cloudResumeUrl: '',
   softwareResumeUrl: '',
+  cloudResumeFileId: '',
+  softwareResumeFileId: '',
   profileImage: '',
 };
 

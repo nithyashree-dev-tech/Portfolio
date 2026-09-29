@@ -1,7 +1,11 @@
 import type { ApiResponse, Achievement, Certification, ContactMessage, ExperienceItem, Profile, Project, Skill } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '');
 const TOKEN_KEY = 'portfolio-admin-token';
+
+if (!API_BASE_URL) {
+  throw new Error('VITE_API_BASE_URL is required. Set it in the root .env file.');
+}
 
 const getStoredToken = () => localStorage.getItem(TOKEN_KEY);
 
@@ -31,7 +35,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       headers,
     });
   } catch {
-    throw new ApiError(`Unable to reach the backend at ${API_BASE_URL}. Start the server on port 5000 and try again.`, 0);
+    throw new ApiError(`Unable to reach the backend at ${API_BASE_URL}. Check that the API service is running.`, 0);
   }
 
   let data: ApiResponse<unknown> | null = null;
@@ -148,7 +152,7 @@ export const profileService = {
   uploadResume: (role: 'cloud' | 'software', file: File) => {
     const formData = new FormData();
     formData.append('resume', file);
-    return request<ApiResponse<{ url: string }>>(`/profile/resumes/${role}`, {
+    return request<ApiResponse<{ url: string; fileId: string }>>(`/profile/resumes/${role}`, {
       method: 'POST',
       body: formData,
     });

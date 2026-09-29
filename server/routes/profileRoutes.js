@@ -1,7 +1,6 @@
 const express = require('express');
-const fs = require('fs');
 const path = require('path');
-const { randomUUID } = require('crypto');
+const mongoose = require('mongoose');
 const multer = require('multer');
 const { body, validationResult } = require('express-validator');
 const authMiddleware = require('../middleware/auth');
@@ -10,14 +9,9 @@ const { Profile } = require('../models');
 const { fallbackData } = require('../utils/mongoFallback');
 
 const router = express.Router();
-const resumeDirectory = process.env.RESUME_UPLOAD_DIR || path.resolve(__dirname, '..', 'uploads', 'resumes');
-fs.mkdirSync(resumeDirectory, { recursive: true });
 
 const resumeUpload = multer({
-  storage: multer.diskStorage({
-    destination: resumeDirectory,
-    filename: (req, file, callback) => callback(null, `${randomUUID()}.pdf`),
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 8 * 1024 * 1024, files: 1 },
   fileFilter: (req, file, callback) => {
     const isPdf = file.mimetype === 'application/pdf' && path.extname(file.originalname).toLowerCase() === '.pdf';
@@ -28,6 +22,8 @@ const resumeUpload = multer({
 const profileFields = ['name', 'professionalTitle', 'shortBio', 'longBio', 'email', 'location', 'githubUrl', 'linkedinUrl', 'resumeUrl', 'cloudResumeUrl', 'softwareResumeUrl', 'profileImage'];
 const pickProfileFields = (body) => Object.fromEntries(profileFields.filter((field) => body[field] !== undefined).map((field) => [field, body[field]]));
 const resumeFields = { cloud: 'cloudResumeUrl', software: 'softwareResumeUrl' };
+const resumeFileFields = { cloud: 'cloudResumeFileId', software: 'softwareResumeFileId' };
+const getResumeBucket = () => new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'resumes' });
 
 router.post('/resumes/:role', authMiddleware, (req, res, next) => {
   if (!resumeFields[req.params.role]) {
@@ -43,52 +39,79 @@ router.post('/resumes/:role', authMiddleware, (req, res, next) => {
 }, async (req, res, next) => {
   if (!req.file) return res.status(400).json({ success: false, message: 'Choose a PDF file to upload.', data: {} });
 
-  try {
-    const fileHandle = await fs.promises.open(req.file.path, 'r');
-    const signature = Buffer.alloc(5);
-    await fileHandle.read(signature, 0, signature.length, 0);
-    await fileHandle.close();
+  if (!connectDB.isDatabaseConnected()) {
+    return res.status(503).json({ success: false, message: 'Resume uploads require an active MongoDB connection.', data: {} });
+  }
 
-    if (signature.toString() !== '%PDF-') {
-      await fs.promises.unlink(req.file.path);
+  const field = resumeFileFields[req.params.role];
+  const bucket = getResumeBucket();
+  let fileId;
+  try {
+    if (req.file.buffer.subarray(0, 5).toString() !== '%PDF-') {
       return res.status(400).json({ success: false, message: 'The selected file is not a valid PDF.', data: {} });
     }
 
-    const url = `/uploads/resumes/${req.file.filename}`;
-    const field = resumeFields[req.params.role];
-    if (!connectDB.isDatabaseConnected()) {
-      fallbackData.profile = { ...fallbackData.profile, [field]: url };
-    } else {
-      const profile = await Profile.findOne();
-      if (!profile) {
-        await fs.promises.unlink(req.file.path);
-        return res.status(404).json({ success: false, message: 'Create a profile before uploading resumes.', data: {} });
-      }
-      profile.set(field, url);
-      await profile.save();
+    const uploadStream = bucket.openUploadStream(`${req.params.role}-resume.pdf`, {
+      contentType: 'application/pdf',
+      metadata: { role: req.params.role, originalName: path.basename(req.file.originalname) },
+    });
+    fileId = uploadStream.id;
+    await new Promise((resolve, reject) => {
+      uploadStream.once('error', reject);
+      uploadStream.once('finish', resolve);
+      uploadStream.end(req.file.buffer);
+    });
+
+    const profile = await Profile.findOne();
+    if (!profile) {
+      await bucket.delete(fileId);
+      return res.status(404).json({ success: false, message: 'Create a profile before uploading resumes.', data: {} });
     }
 
-    return res.status(201).json({ success: true, message: 'Resume uploaded successfully.', data: { url } });
+    profile.set(field, `/api/v1/profile/resumes/${req.params.role}/download`);
+    profile.set(resumeFileFields[req.params.role], fileId.toString());
+    await profile.save();
+
+    return res.status(201).json({
+      success: true,
+      message: 'Resume uploaded to MongoDB successfully.',
+      data: { url: `/api/v1/profile/resumes/${req.params.role}/download`, fileId: fileId.toString() },
+    });
   } catch (error) {
+    if (fileId) await bucket.delete(fileId).catch(() => {});
     return next(error);
   }
 });
 
-router.get('/resumes/:role/download', async (req, res, next) => {
+router.get('/resumes/:role/:action', async (req, res, next) => {
   try {
-    const field = resumeFields[req.params.role];
-    if (!field) return res.status(400).json({ success: false, message: 'Unknown resume role.', data: {} });
+    const fileField = resumeFileFields[req.params.role];
+    if (!fileField) return res.status(400).json({ success: false, message: 'Unknown resume role.', data: {} });
+    if (!['download', 'preview'].includes(req.params.action)) {
+      return res.status(400).json({ success: false, message: 'Unknown resume action.', data: {} });
+    }
 
-    const profile = connectDB.isDatabaseConnected() ? await Profile.findOne().lean() : fallbackData.profile;
-    const resumeUrl = profile?.[field];
-    if (!resumeUrl || !resumeUrl.startsWith('/uploads/resumes/')) {
+    if (!connectDB.isDatabaseConnected()) {
+      return res.status(503).json({ success: false, message: 'Resume files require an active MongoDB connection.', data: {} });
+    }
+
+    const profile = await Profile.findOne().lean();
+    const id = profile?.[fileField];
+    if (!id || !mongoose.isValidObjectId(id)) {
       return res.status(404).json({ success: false, message: 'No resume has been uploaded for this role yet.', data: {} });
     }
 
-    const filePath = path.join(resumeDirectory, path.basename(resumeUrl));
-    return res.download(filePath, `${req.params.role}-resume.pdf`, (error) => {
-      if (error && !res.headersSent) next(error);
-    });
+    const bucket = getResumeBucket();
+    const file = await bucket.find({ _id: new mongoose.Types.ObjectId(id) }).next();
+    if (!file) return res.status(404).json({ success: false, message: 'The stored resume file was not found.', data: {} });
+
+    const filename = `${req.params.role}-resume.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `${req.params.action === 'download' ? 'attachment' : 'inline'}; filename="${filename}"`);
+    res.setHeader('Content-Length', file.length);
+    bucket.openDownloadStream(new mongoose.Types.ObjectId(id))
+      .on('error', next)
+      .pipe(res);
   } catch (error) {
     return next(error);
   }

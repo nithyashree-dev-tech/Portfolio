@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { env } = require('../config/env');
 
 const getToken = (req) => {
   const authHeader = req.headers.authorization || '';
@@ -17,10 +18,7 @@ const authMiddleware = (req, res, next) => {
   }
 
   try {
-    if (!process.env.JWT_SECRET) {
-      return res.status(500).json({ success: false, message: 'Authentication is not configured', data: {} });
-    }
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, env.jwtSecret);
     if (decoded.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Admin access required' });
     }

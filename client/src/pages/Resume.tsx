@@ -5,8 +5,8 @@ import { API_BASE_URL, profileService } from '../services/api';
 import type { Profile } from '../types';
 
 const resumeOptions = [
-  { role: 'cloud', label: 'Cloud Engineering', field: 'cloudResumeUrl' as const },
-  { role: 'software', label: 'Software Engineering', field: 'softwareResumeUrl' as const },
+  { role: 'cloud', label: 'Cloud Engineering', field: 'cloudResumeFileId' as const },
+  { role: 'software', label: 'Software Engineering', field: 'softwareResumeFileId' as const },
 ];
 
 const Resume = () => {
@@ -34,8 +34,8 @@ const Resume = () => {
         <p className="card resume-empty">Loading resumes...</p>
       ) : availableResumes.length ? (
         <div className="resume-grid">
-          {availableResumes.map(({ role, label, field }) => {
-            const previewUrl = new URL(profile![field]!, API_BASE_URL).toString();
+          {availableResumes.map(({ role, label }) => {
+            const previewUrl = `${API_BASE_URL}/profile/resumes/${role}/preview`;
             return (
               <article className="card resume-option" key={role}>
                 <div className="resume-option-heading">

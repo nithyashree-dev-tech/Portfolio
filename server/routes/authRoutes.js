@@ -6,23 +6,24 @@ const { body, validationResult } = require('express-validator');
 const authMiddleware = require('../middleware/auth');
 const { Admin } = require('../models');
 const connectDB = require('../config/db');
+const { env } = require('../config/env');
 
 const router = express.Router();
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: env.loginRateLimitMax,
   message: { success: false, message: 'Too many login attempts' },
 });
 
-const createToken = (email, role = 'admin') => jwt.sign({ email, role }, process.env.JWT_SECRET, {
-  expiresIn: '8h',
+const createToken = (email, role = 'admin') => jwt.sign({ email, role }, env.jwtSecret, {
+  expiresIn: env.jwtExpiresIn,
 });
 
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-  maxAge: 8 * 60 * 60 * 1000,
+  secure: env.nodeEnv === 'production',
+  sameSite: env.nodeEnv === 'production' ? 'none' : 'lax',
+  maxAge: env.authCookieMaxAgeMs,
 };
 
 router.post(
@@ -46,8 +47,6 @@ router.post(
         const admin = await Admin.findOne({ email: normalizedEmail }).lean();
         match = Boolean(admin && bcrypt.compareSync(password, admin.passwordHash));
         role = admin?.role || role;
-      } else if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
-        match = normalizedEmail === process.env.ADMIN_EMAIL.toLowerCase() && password === process.env.ADMIN_PASSWORD;
       }
 
       if (!match) {

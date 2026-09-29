@@ -112,6 +112,8 @@ const profileSchema = new mongoose.Schema(
     resumeUrl: { type: String, default: '', trim: true },
     cloudResumeUrl: { type: String, default: '', trim: true },
     softwareResumeUrl: { type: String, default: '', trim: true },
+    cloudResumeFileId: { type: String, default: '' },
+    softwareResumeFileId: { type: String, default: '' },
     profileImage: { type: String, default: '', trim: true },
   },
   { timestamps: true },
