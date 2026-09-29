@@ -12,6 +12,7 @@ import Experience from './pages/Experience';
 import Achievements from './pages/Achievements';
 import Resume from './pages/Resume';
 import Contact from './pages/Contact';
+import Photos from './pages/Photos';
 import AdminLogin from './admin/Login';
 import AdminDashboard from './admin/Dashboard';
 import ProtectedRoute from './admin/ProtectedRoute';
@@ -35,6 +36,7 @@ function AppContent() {
               <Route path="/projects" element={<Projects />} />
               <Route path="/projects/:slug" element={<ProjectDetails />} />
               <Route path="/certifications" element={<Certifications />} />
+              <Route path="/photos" element={<Photos />} />
               <Route path="/experience" element={<Experience />} />
               <Route path="/achievements" element={<Achievements />} />
               <Route path="/resume" element={<Resume />} />
@@ -44,6 +46,7 @@ function AppContent() {
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/admin/projects" element={<AdminDashboard />} />
                 <Route path="/admin/certifications" element={<AdminDashboard />} />
+                <Route path="/admin/gallery" element={<AdminDashboard />} />
                 <Route path="/admin/skills" element={<AdminDashboard />} />
                 <Route path="/admin/experience" element={<AdminDashboard />} />
                 <Route path="/admin/achievements" element={<AdminDashboard />} />

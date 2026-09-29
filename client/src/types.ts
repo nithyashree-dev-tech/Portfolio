@@ -75,6 +75,15 @@ export type ContactMessage = {
   createdAt?: string;
 };
 
+export type GalleryPhoto = {
+  _id: string;
+  title: string;
+  caption: string;
+  contentType: 'image/jpeg' | 'image/png' | 'image/webp';
+  createdAt: string;
+  imageUrl: string;
+};
+
 export type Profile = {
   _id?: string;
   name: string;

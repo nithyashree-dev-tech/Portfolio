@@ -1,4 +1,4 @@
-import type { ApiResponse, Achievement, Certification, ContactMessage, ExperienceItem, Profile, Project, Skill } from '../types';
+import type { ApiResponse, Achievement, Certification, ContactMessage, ExperienceItem, GalleryPhoto, Profile, Project, Skill } from '../types';
 
 const configuredApiBase = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '');
 const API_BASE_URL = configuredApiBase && /^https?:\/\//i.test(configuredApiBase)
@@ -147,6 +147,18 @@ export const messageService = {
     body: JSON.stringify(payload),
   }),
   remove: (id: string) => request<ApiResponse<{}>>(`/messages/${id}`, { method: 'DELETE' }),
+};
+
+export const galleryService = {
+  getAll: () => request<ApiResponse<GalleryPhoto[]>>('/gallery'),
+  upload: (file: File, title: string, caption: string) => {
+    const formData = new FormData();
+    formData.append('photo', file);
+    formData.append('title', title);
+    formData.append('caption', caption);
+    return request<ApiResponse<GalleryPhoto>>('/gallery', { method: 'POST', body: formData });
+  },
+  remove: (id: string) => request<ApiResponse<{}>>(`/gallery/${id}`, { method: 'DELETE' }),
 };
 
 export const profileService = {

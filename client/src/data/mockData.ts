@@ -108,6 +108,7 @@ export const navItems = [
   { label: 'Skills', href: '/skills' },
   { label: 'Projects', href: '/projects' },
   { label: 'Certifications', href: '/certifications' },
+  { label: 'Photos', href: '/photos' },
   { label: 'Experience', href: '/experience' },
   { label: 'Contact', href: '/contact' },
 ];

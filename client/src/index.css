@@ -427,6 +427,71 @@ button, input, textarea { font: inherit; }
 .skills-grid { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
 .stats-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 
+.gallery-grid {
+  columns: 3 260px;
+  column-gap: 1rem;
+}
+
+.gallery-photo {
+  position: relative;
+  break-inside: avoid;
+  margin: 0 0 1rem;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.gallery-photo > a {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: var(--bg-soft);
+}
+
+.gallery-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: transform 0.35s ease;
+}
+
+.gallery-photo > a:hover img { transform: scale(1.025); }
+
+.gallery-open {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  border-radius: 50%;
+  background: rgba(16, 25, 24, 0.74);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.gallery-photo > a:hover .gallery-open,
+.gallery-photo > a:focus-visible .gallery-open { opacity: 1; }
+
+.gallery-photo figcaption { padding: 0.9rem 1rem 1rem; }
+.gallery-photo h2 { margin: 0; font-size: 1rem; }
+.gallery-photo p { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.9rem; }
+
+.admin-gallery-item { align-items: center; }
+.admin-gallery-image {
+  flex: 0 0 5rem;
+  width: 5rem;
+  height: 4rem;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--bg-soft);
+}
+
 .card {
   padding: 1.25rem;
 }
@@ -724,6 +789,14 @@ button, input, textarea { font: inherit; }
   cursor: pointer;
 }
 .admin-form-actions { justify-content: flex-start; padding-top: 0.25rem; }
+
+.gallery-upload-preview {
+  max-width: 100%;
+  max-height: 14rem;
+  border-radius: 8px;
+  object-fit: contain;
+  background: var(--bg-soft);
+}
 
 .site-footer {
   border-top: 1px solid var(--card-border);

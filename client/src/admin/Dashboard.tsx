@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { BadgeCheck, BriefcaseBusiness, MessageSquareText, Projector, Trash2, Trophy, Wrench } from 'lucide-react';
+import { BadgeCheck, BriefcaseBusiness, Image, MessageSquareText, Projector, Trash2, Trophy, Wrench } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import type { Achievement, Certification, ContactMessage, ExperienceItem, Profile, Project, Skill } from '../types';
-import { achievementService, authService, certificationService, experienceService, getAuthToken, messageService, profileService, projectService, skillService } from '../services/api';
+import type { Achievement, Certification, ContactMessage, ExperienceItem, GalleryPhoto, Profile, Project, Skill } from '../types';
+import { achievementService, API_BASE_URL, authService, certificationService, experienceService, galleryService, getAuthToken, messageService, profileService, projectService, skillService } from '../services/api';
 
-type TabKey = 'projects' | 'certifications' | 'skills' | 'experience' | 'achievements' | 'messages' | 'profile';
+type TabKey = 'projects' | 'certifications' | 'skills' | 'experience' | 'achievements' | 'gallery' | 'messages' | 'profile';
 
 type DraftState = Record<string, string | boolean>;
 
@@ -58,6 +58,8 @@ const emptyAchievementDraft = {
   image: '',
 };
 
+const emptyGalleryDraft = { title: '', caption: '' };
+
 const emptyProfileDraft = {
   name: '', professionalTitle: '', shortBio: '', longBio: '', email: '', location: '',
   githubUrl: '', linkedinUrl: '', resumeUrl: '', cloudResumeFileId: '', softwareResumeFileId: '', profileImage: '',
@@ -69,6 +71,7 @@ const dashboardTabs: { key: TabKey; label: string }[] = [
   { key: 'skills', label: 'Skills' },
   { key: 'experience', label: 'Experience' },
   { key: 'achievements', label: 'Achievements' },
+  { key: 'gallery', label: 'Photo Gallery' },
   { key: 'messages', label: 'Messages' },
   { key: 'profile', label: 'Profile' },
 ];
@@ -81,6 +84,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingResume, setUploadingResume] = useState<'cloud' | 'software' | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [workingId, setWorkingId] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -89,6 +93,7 @@ const Dashboard = () => {
   const [experience, setExperience] = useState<ExperienceItem[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [draft, setDraft] = useState<DraftState>({ ...emptyProjectDraft });
 
@@ -98,6 +103,7 @@ const Dashboard = () => {
     { label: 'Skills', value: skills.length, icon: Wrench },
     { label: 'Experience', value: experience.length, icon: BriefcaseBusiness },
     { label: 'Achievements', value: achievements.length, icon: Trophy },
+    { label: 'Photos', value: photos.length, icon: Image },
     { label: 'Unread Messages', value: messages.filter((message) => !message.status || message.status === 'unread').length, icon: MessageSquareText },
   ];
 
@@ -107,6 +113,10 @@ const Dashboard = () => {
     if (tab === 'skills') setDraft({ ...emptySkillDraft });
     if (tab === 'experience') setDraft({ ...emptyExperienceDraft });
     if (tab === 'achievements') setDraft({ ...emptyAchievementDraft });
+    if (tab === 'gallery') {
+      setDraft({ ...emptyGalleryDraft });
+      setPhotoFile(null);
+    }
     if (tab === 'messages') setDraft({});
     if (tab === 'profile') setDraft({ ...(profile || emptyProfileDraft) });
     setWorkingId(null);
@@ -121,7 +131,7 @@ const Dashboard = () => {
 
     const loadDashboard = async () => {
       try {
-        const [projectsResponse, certificationsResponse, skillsResponse, experienceResponse, achievementsResponse, messagesResponse, profileResponse] = await Promise.all([
+        const [projectsResponse, certificationsResponse, skillsResponse, experienceResponse, achievementsResponse, messagesResponse, profileResponse, photosResponse] = await Promise.all([
           projectService.getAll(),
           certificationService.getAll(),
           skillService.getAll(),
@@ -129,6 +139,7 @@ const Dashboard = () => {
           achievementService.getAll(),
           messageService.getAll(),
           profileService.get(),
+          galleryService.getAll(),
         ]);
 
         setProjects(projectsResponse.data);
@@ -137,6 +148,7 @@ const Dashboard = () => {
         setExperience(experienceResponse.data);
         setAchievements(achievementsResponse.data);
         setMessages(messagesResponse.data);
+        setPhotos(photosResponse.data);
         setProfile(profileResponse.data);
         setDraft({ ...(profileResponse.data || emptyProfileDraft) });
       } catch (dashboardError) {
@@ -289,6 +301,16 @@ const Dashboard = () => {
         }
       }
 
+      if (activeTab === 'gallery') {
+        if (!photoFile) throw new Error('Choose an image before adding it to the gallery.');
+        const uploaded = await galleryService.upload(
+          photoFile,
+          String(draft.title || ''),
+          String(draft.caption || ''),
+        );
+        setPhotos((current) => [uploaded.data, ...current]);
+      }
+
       if (activeTab === 'profile') {
         const updated = await profileService.update({
           name: String(draft.name || ''),
@@ -323,6 +345,7 @@ const Dashboard = () => {
       if (tab === 'experience') await experienceService.remove(id);
       if (tab === 'achievements') await achievementService.remove(id);
       if (tab === 'messages') await messageService.remove(id);
+      if (tab === 'gallery') await galleryService.remove(id);
 
       if (tab === 'projects') setProjects((current) => current.filter((item) => item._id !== id));
       if (tab === 'certifications') setCertifications((current) => current.filter((item) => item._id !== id));
@@ -330,6 +353,7 @@ const Dashboard = () => {
       if (tab === 'experience') setExperience((current) => current.filter((item) => item._id !== id));
       if (tab === 'achievements') setAchievements((current) => current.filter((item) => item._id !== id));
       if (tab === 'messages') setMessages((current) => current.filter((item) => item._id !== id));
+      if (tab === 'gallery') setPhotos((current) => current.filter((item) => item._id !== id));
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : 'Unable to delete item.');
     }
@@ -449,6 +473,23 @@ const Dashboard = () => {
       ));
     }
 
+    if (activeTab === 'gallery') {
+      return photos.map((photo) => (
+        <div key={photo._id} className="card admin-item admin-gallery-item">
+          <img className="admin-gallery-image" src={`${API_BASE_URL}${photo.imageUrl.replace(/^\/api\/v1/, '')}`} alt={photo.title} />
+          <div>
+            <h4>{photo.title}</h4>
+            {photo.caption ? <p>{photo.caption}</p> : null}
+          </div>
+          <div className="admin-actions">
+            <button type="button" className="button ghost small" onClick={() => void handleDelete('gallery', photo._id)}>
+              <Trash2 size={14} /> Delete
+            </button>
+          </div>
+        </div>
+      ));
+    }
+
     return messages.map((item) => (
       <div key={item._id ?? `${item.name}-${item.email}`} className="card admin-item">
         <div>
@@ -471,6 +512,20 @@ const Dashboard = () => {
   };
 
   const renderFormFields = () => {
+    if (activeTab === 'gallery') {
+      return (
+        <>
+          <label>Photo title<input required maxLength={120} value={String(draft.title || '')} onChange={(event) => handleDraftChange('title', event.target.value)} /></label>
+          <label>Caption<textarea maxLength={500} value={String(draft.caption || '')} onChange={(event) => handleDraftChange('caption', event.target.value)} /></label>
+          <label>
+            Photo (JPG, PNG or WebP, up to 12 MB)
+            <input required type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setPhotoFile(event.target.files?.[0] || null)} />
+            {photoFile ? <small>{photoFile.name}</small> : null}
+          </label>
+        </>
+      );
+    }
+
     if (activeTab === 'projects') {
       return (
         <>
