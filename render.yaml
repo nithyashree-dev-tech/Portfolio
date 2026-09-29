@@ -8,13 +8,15 @@ services:
     healthCheckPath: /api/v1/health
     envVars:
       - key: NODE_ENV
-        value: production
+        value: "production"
+      - key: NODE_VERSION
+        value: "22.16.0"
       - key: VITE_API_BASE_URL
-        value: /api/v1
+        value: "/api/v1"
       - key: MONGODB_URI
         sync: false
       - key: MONGODB_DATABASE
-        value: portfolio
+        value: "portfolio"
       - key: JWT_SECRET
         generateValue: true
       - key: ADMIN_EMAIL
@@ -24,11 +26,11 @@ services:
       - key: CONTACT_EMAIL
         sync: false
       - key: SMTP_HOST
-        value: smtp.gmail.com
+        value: "smtp.gmail.com"
       - key: SMTP_PORT
-        value: 465
+        value: "465"
       - key: SMTP_SECURE
-        value: true
+        value: "true"
       - key: SMTP_USER
         sync: false
       - key: SMTP_PASSWORD
