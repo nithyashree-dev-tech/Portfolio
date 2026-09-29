@@ -161,6 +161,22 @@ export const galleryService = {
   remove: (id: string) => request<ApiResponse<{}>>(`/gallery/${id}`, { method: 'DELETE' }),
 };
 
+export const mediaService = {
+  uploadImage: (file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return request<ApiResponse<{ imageUrl: string; fileId: string }>>('/media/images', {
+      method: 'POST',
+      body: formData,
+    });
+  },
+  removeImageByUrl: (url: string) => {
+    const match = url.match(/\/api\/v1\/media\/images\/([a-f\d]{24})(?:$|[?#])/i);
+    if (!match) return Promise.resolve(null);
+    return request<ApiResponse<{}>>(`/media/images/${match[1]}`, { method: 'DELETE' });
+  },
+};
+
 export const profileService = {
   get: () => request<ApiResponse<Profile>>('/profile'),
   update: (payload: Partial<Profile>) => request<ApiResponse<Profile>>('/profile', {

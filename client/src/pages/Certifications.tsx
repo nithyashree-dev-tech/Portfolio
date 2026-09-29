@@ -33,16 +33,16 @@ const Certifications = () => {
       <div className="cert-grid">
         {certifications.map((cert) => (
           <article key={cert.title} className="card cert-card">
-            <img src={cert.certificateImage} alt={cert.title} />
+            {cert.certificateImage ? <img src={cert.certificateImage} alt={cert.title} loading="lazy" /> : null}
             <div>
               <h3>{cert.title}</h3>
               <p>{cert.issuer}</p>
-              <p>{cert.issueDate}</p>
+              {cert.issueDate ? <p>{cert.issueDate}</p> : null}
               {cert.credentialId ? <p>Credential ID: {cert.credentialId}</p> : null}
-              <a href={cert.credentialUrl} target="_blank" rel="noreferrer">View Credential</a>
-              <div className="chip-list">
+              {cert.credentialUrl ? <a href={cert.credentialUrl} target="_blank" rel="noreferrer">View Credential</a> : null}
+              {cert.skills.length ? <div className="chip-list">
                 {cert.skills.map((skill) => <span key={`${cert.title}-${skill}`} className="chip">{skill}</span>)}
-              </div>
+              </div> : null}
             </div>
           </article>
         ))}

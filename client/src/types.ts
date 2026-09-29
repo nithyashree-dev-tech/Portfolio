@@ -27,6 +27,8 @@ export type Project = {
   aiIntegration?: string;
   challenges?: string[];
   futureImprovements?: string[];
+  startDate?: string;
+  endDate?: string;
 };
 
 export type Certification = {

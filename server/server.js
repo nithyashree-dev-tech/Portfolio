@@ -16,6 +16,7 @@ const messageRoutes = require('./routes/messageRoutes');
 const seedRoutes = require('./routes/seedRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const galleryRoutes = require('./routes/galleryRoutes');
+const mediaRoutes = require('./routes/mediaRoutes');
 const { ensureData } = require('./utils/mongoFallback');
 const errorHandler = require('./middleware/errorHandler');
 const { Profile } = require('./models');
@@ -37,6 +38,7 @@ app.use(
   }),
 );
 app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
   contentSecurityPolicy: {
     directives: {
       'img-src': ["'self'", 'data:', 'https://images.unsplash.com'],
@@ -68,6 +70,7 @@ app.use('/api/v1/messages', messageRoutes);
 app.use('/api/v1/seed', seedRoutes);
 app.use('/api/v1/profile', profileRoutes);
 app.use('/api/v1/gallery', galleryRoutes);
+app.use('/api/v1/media', mediaRoutes);
 
 const clientBuildPath = path.resolve(__dirname, '..', 'client', 'dist');
 app.use(express.static(clientBuildPath));

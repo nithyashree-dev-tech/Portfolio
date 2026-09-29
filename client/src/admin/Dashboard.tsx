@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BadgeCheck, BriefcaseBusiness, Image, MessageSquareText, Projector, Trash2, Trophy, Wrench } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { Achievement, Certification, ContactMessage, ExperienceItem, GalleryPhoto, Profile, Project, Skill } from '../types';
-import { achievementService, API_BASE_URL, authService, certificationService, experienceService, galleryService, getAuthToken, messageService, profileService, projectService, skillService } from '../services/api';
+import { achievementService, API_BASE_URL, authService, certificationService, experienceService, galleryService, getAuthToken, mediaService, messageService, profileService, projectService, skillService } from '../services/api';
 
 type TabKey = 'projects' | 'certifications' | 'skills' | 'experience' | 'achievements' | 'gallery' | 'messages' | 'profile';
 
@@ -15,10 +15,20 @@ const emptyProjectDraft = {
   longDescription: '',
   technologies: '',
   features: '',
+  problem: '',
+  solution: '',
+  architecture: '',
+  auth: '',
+  database: '',
+  aiIntegration: '',
+  challenges: '',
+  futureImprovements: '',
   githubUrl: '',
   liveUrl: '',
   image: '',
   featured: false,
+  startDate: '',
+  endDate: '',
 };
 
 const emptyCertificationDraft = {
@@ -85,6 +95,7 @@ const Dashboard = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingResume, setUploadingResume] = useState<'cloud' | 'software' | null>(null);
   const [uploadingProfilePhoto, setUploadingProfilePhoto] = useState(false);
+  const [uploadingImageField, setUploadingImageField] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [workingId, setWorkingId] = useState<string | null>(null);
@@ -95,6 +106,7 @@ const Dashboard = () => {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
+  const stagedContentImages = useRef<string[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [draft, setDraft] = useState<DraftState>({ ...emptyProjectDraft });
 
@@ -109,6 +121,8 @@ const Dashboard = () => {
   ];
 
   const resetDraft = (tab: TabKey) => {
+    for (const imageUrl of stagedContentImages.current) void mediaService.removeImageByUrl(imageUrl).catch(() => {});
+    stagedContentImages.current = [];
     if (tab === 'projects') setDraft({ ...emptyProjectDraft });
     if (tab === 'certifications') setDraft({ ...emptyCertificationDraft });
     if (tab === 'skills') setDraft({ ...emptySkillDraft });
@@ -214,6 +228,27 @@ const Dashboard = () => {
     }
   };
 
+  const handleContentImageUpload = async (field: 'image' | 'certificateImage', file?: File) => {
+    if (!file) return;
+    setUploadingImageField(field);
+    setError('');
+    try {
+      const response = await mediaService.uploadImage(file);
+      handleDraftChange(field, response.data.imageUrl);
+      stagedContentImages.current.push(response.data.imageUrl);
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : 'Unable to upload image.');
+    } finally {
+      setUploadingImageField(null);
+    }
+  };
+
+  const finishContentImageSave = async (savedImageUrl: string) => {
+    const unusedImages = stagedContentImages.current.filter((imageUrl) => imageUrl !== savedImageUrl);
+    await Promise.all(unusedImages.map((imageUrl) => mediaService.removeImageByUrl(imageUrl).catch(() => null)));
+    stagedContentImages.current = [];
+  };
+
   const parseList = (value: string) => value.split(',').map((entry) => entry.trim()).filter(Boolean);
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -230,19 +265,32 @@ const Dashboard = () => {
           longDescription: String(draft.longDescription || ''),
           technologies: parseList(String(draft.technologies || '')),
           features: parseList(String(draft.features || '')),
+          problem: String(draft.problem || ''),
+          solution: String(draft.solution || ''),
+          architecture: String(draft.architecture || ''),
+          auth: String(draft.auth || ''),
+          database: String(draft.database || ''),
+          aiIntegration: String(draft.aiIntegration || ''),
+          challenges: parseList(String(draft.challenges || '')),
+          futureImprovements: parseList(String(draft.futureImprovements || '')),
           githubUrl: String(draft.githubUrl || ''),
           liveUrl: String(draft.liveUrl || ''),
           image: String(draft.image || ''),
           featured: Boolean(draft.featured),
+          startDate: String(draft.startDate || ''),
+          endDate: String(draft.endDate || ''),
         };
 
         if (workingId) {
+          const previousImage = projects.find((item) => item._id === workingId)?.image || '';
           const updated = await projectService.update(workingId, payload);
           setProjects((current) => current.map((item) => (item._id === workingId ? updated.data : item)));
+          if (previousImage && previousImage !== payload.image) await mediaService.removeImageByUrl(previousImage);
         } else {
           const created = await projectService.create(payload);
           setProjects((current) => [created.data, ...current]);
         }
+        await finishContentImageSave(String(payload.image || ''));
       }
 
       if (activeTab === 'certifications') {
@@ -257,12 +305,15 @@ const Dashboard = () => {
         };
 
         if (workingId) {
+          const previousImage = certifications.find((item) => item._id === workingId)?.certificateImage || '';
           const updated = await certificationService.update(workingId, payload);
           setCertifications((current) => current.map((item) => (item._id === workingId ? updated.data : item)));
+          if (previousImage && previousImage !== payload.certificateImage) await mediaService.removeImageByUrl(previousImage);
         } else {
           const created = await certificationService.create(payload);
           setCertifications((current) => [created.data, ...current]);
         }
+        await finishContentImageSave(String(payload.certificateImage || ''));
       }
 
       if (activeTab === 'skills') {
@@ -314,12 +365,15 @@ const Dashboard = () => {
         };
 
         if (workingId) {
+          const previousImage = achievements.find((item) => item._id === workingId)?.image || '';
           const updated = await achievementService.update(workingId, payload);
           setAchievements((current) => current.map((item) => (item._id === workingId ? updated.data : item)));
+          if (previousImage && previousImage !== payload.image) await mediaService.removeImageByUrl(previousImage);
         } else {
           const created = await achievementService.create(payload);
           setAchievements((current) => [created.data, ...current]);
         }
+        await finishContentImageSave(String(payload.image || ''));
       }
 
       if (activeTab === 'gallery') {
@@ -360,6 +414,13 @@ const Dashboard = () => {
     if (!window.confirm('Delete this entry? This action cannot be undone.')) return;
 
     try {
+      const imageToDelete = tab === 'projects'
+        ? projects.find((item) => item._id === id)?.image
+        : tab === 'certifications'
+          ? certifications.find((item) => item._id === id)?.certificateImage
+          : tab === 'achievements'
+            ? achievements.find((item) => item._id === id)?.image
+            : undefined;
       if (tab === 'projects') await projectService.remove(id);
       if (tab === 'certifications') await certificationService.remove(id);
       if (tab === 'skills') await skillService.remove(id);
@@ -367,6 +428,7 @@ const Dashboard = () => {
       if (tab === 'achievements') await achievementService.remove(id);
       if (tab === 'messages') await messageService.remove(id);
       if (tab === 'gallery') await galleryService.remove(id);
+      if (imageToDelete) await mediaService.removeImageByUrl(imageToDelete);
 
       if (tab === 'projects') setProjects((current) => current.filter((item) => item._id !== id));
       if (tab === 'certifications') setCertifications((current) => current.filter((item) => item._id !== id));
@@ -550,15 +612,30 @@ const Dashboard = () => {
     if (activeTab === 'projects') {
       return (
         <>
-          <label>Title<input value={String(draft.title || '')} onChange={(event) => handleDraftChange('title', event.target.value)} /></label>
-          <label>Slug<input value={String(draft.slug || '')} onChange={(event) => handleDraftChange('slug', event.target.value)} /></label>
-          <label>Description<textarea value={String(draft.description || '')} onChange={(event) => handleDraftChange('description', event.target.value)} /></label>
-          <label>Long Description<textarea value={String(draft.longDescription || '')} onChange={(event) => handleDraftChange('longDescription', event.target.value)} /></label>
+          <label>Title<input required value={String(draft.title || '')} onChange={(event) => handleDraftChange('title', event.target.value)} /></label>
+          <label>Slug<input required value={String(draft.slug || '')} onChange={(event) => handleDraftChange('slug', event.target.value)} /></label>
+          <label>Description<textarea required value={String(draft.description || '')} onChange={(event) => handleDraftChange('description', event.target.value)} /></label>
+          <label>Long Description<textarea required value={String(draft.longDescription || '')} onChange={(event) => handleDraftChange('longDescription', event.target.value)} /></label>
           <label>Technologies<input value={String(draft.technologies || '')} onChange={(event) => handleDraftChange('technologies', event.target.value)} /></label>
           <label>Features<input value={String(draft.features || '')} onChange={(event) => handleDraftChange('features', event.target.value)} /></label>
+          <label>Problem<textarea value={String(draft.problem || '')} onChange={(event) => handleDraftChange('problem', event.target.value)} /></label>
+          <label>Solution<textarea value={String(draft.solution || '')} onChange={(event) => handleDraftChange('solution', event.target.value)} /></label>
+          <label>Architecture<textarea value={String(draft.architecture || '')} onChange={(event) => handleDraftChange('architecture', event.target.value)} /></label>
+          <label>Authentication<textarea value={String(draft.auth || '')} onChange={(event) => handleDraftChange('auth', event.target.value)} /></label>
+          <label>Database<textarea value={String(draft.database || '')} onChange={(event) => handleDraftChange('database', event.target.value)} /></label>
+          <label>AI Integration<textarea value={String(draft.aiIntegration || '')} onChange={(event) => handleDraftChange('aiIntegration', event.target.value)} /></label>
+          <label>Challenges (comma-separated)<textarea value={String(draft.challenges || '')} onChange={(event) => handleDraftChange('challenges', event.target.value)} /></label>
+          <label>Future Improvements (comma-separated)<textarea value={String(draft.futureImprovements || '')} onChange={(event) => handleDraftChange('futureImprovements', event.target.value)} /></label>
           <label>GitHub URL<input value={String(draft.githubUrl || '')} onChange={(event) => handleDraftChange('githubUrl', event.target.value)} /></label>
           <label>Live URL<input value={String(draft.liveUrl || '')} onChange={(event) => handleDraftChange('liveUrl', event.target.value)} /></label>
-          <label>Image URL<input value={String(draft.image || '')} onChange={(event) => handleDraftChange('image', event.target.value)} /></label>
+          <label>
+            Project image (JPG, PNG or WebP, up to 12 MB)
+            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void handleContentImageUpload('image', event.target.files?.[0])} />
+            {uploadingImageField === 'image' ? <small>Uploading to MongoDB...</small> : null}
+          </label>
+          <label>Or use an existing image URL<input type="url" value={String(draft.image || '')} onChange={(event) => handleDraftChange('image', event.target.value)} /></label>
+          <label>Start Date<input type="date" value={String(draft.startDate || '')} onChange={(event) => handleDraftChange('startDate', event.target.value)} /></label>
+          <label>End Date<input type="date" value={String(draft.endDate || '')} onChange={(event) => handleDraftChange('endDate', event.target.value)} /></label>
           <label className="check-row"><input type="checkbox" checked={Boolean(draft.featured)} onChange={(event) => handleDraftChange('featured', event.target.checked)} /> Featured project</label>
         </>
       );
@@ -572,7 +649,12 @@ const Dashboard = () => {
           <label>Issue Date<input value={String(draft.issueDate || '')} onChange={(event) => handleDraftChange('issueDate', event.target.value)} /></label>
           <label>Credential ID<input value={String(draft.credentialId || '')} onChange={(event) => handleDraftChange('credentialId', event.target.value)} /></label>
           <label>Credential URL<input value={String(draft.credentialUrl || '')} onChange={(event) => handleDraftChange('credentialUrl', event.target.value)} /></label>
-          <label>Certificate Image<input value={String(draft.certificateImage || '')} onChange={(event) => handleDraftChange('certificateImage', event.target.value)} /></label>
+          <label>
+            Certificate image (JPG, PNG or WebP, up to 12 MB)
+            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void handleContentImageUpload('certificateImage', event.target.files?.[0])} />
+            {uploadingImageField === 'certificateImage' ? <small>Uploading to MongoDB...</small> : null}
+          </label>
+          <label>Or use an existing image URL<input type="url" value={String(draft.certificateImage || '')} onChange={(event) => handleDraftChange('certificateImage', event.target.value)} /></label>
           <label>Skills<input value={String(draft.skills || '')} onChange={(event) => handleDraftChange('skills', event.target.value)} /></label>
         </>
       );
@@ -619,7 +701,12 @@ const Dashboard = () => {
           <label>Organization<input value={String(draft.organization || '')} onChange={(event) => handleDraftChange('organization', event.target.value)} /></label>
           <label>Date<input value={String(draft.date || '')} onChange={(event) => handleDraftChange('date', event.target.value)} /></label>
           <label>Link<input value={String(draft.link || '')} onChange={(event) => handleDraftChange('link', event.target.value)} /></label>
-          <label>Image<input value={String(draft.image || '')} onChange={(event) => handleDraftChange('image', event.target.value)} /></label>
+          <label>
+            Achievement image (JPG, PNG or WebP, up to 12 MB)
+            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void handleContentImageUpload('image', event.target.files?.[0])} />
+            {uploadingImageField === 'image' ? <small>Uploading to MongoDB...</small> : null}
+          </label>
+          <label>Or use an existing image URL<input type="url" value={String(draft.image || '')} onChange={(event) => handleDraftChange('image', event.target.value)} /></label>
         </>
       );
     }

@@ -31,63 +31,39 @@ const ProjectDetails = () => {
     return <div className="container page">Project not found.</div>;
   }
 
+  const hasText = (value?: string) => Boolean(value?.trim());
+  const hasItems = (values?: string[]) => Boolean(values?.some((value) => value.trim()));
+
   return (
     <div className="page container project-details">
       <Link to="/projects" className="back-link">← Back to projects</Link>
       <article className="card details-card">
-        <img src={project.image} alt={project.title} className="detail-image" />
+        {project.image ? <img src={project.image} alt={project.title} className="detail-image" /> : null}
         <div className="detail-copy">
           <p className="eyebrow">Featured Project</p>
           <h1>{project.title}</h1>
           <p>{project.description}</p>
-          <div className="chip-list">
+          {(project.startDate || project.endDate) ? <p className="muted">{[project.startDate, project.endDate].filter(Boolean).join(' — ')}</p> : null}
+          <div className="project-actions">
+            {project.githubUrl ? <a href={project.githubUrl} target="_blank" rel="noreferrer">GitHub</a> : null}
+            {project.liveUrl ? <a href={project.liveUrl} target="_blank" rel="noreferrer">Live demo</a> : null}
+          </div>
+          {project.technologies.length ? <div className="chip-list">
             {project.technologies.map((tech) => (
               <span key={tech} className="chip">{tech}</span>
             ))}
-          </div>
+          </div> : null}
 
-          <section>
-            <h3>Problem</h3>
-            <p>{project.problem}</p>
-          </section>
-          <section>
-            <h3>Solution</h3>
-            <p>{project.solution}</p>
-          </section>
-          <section>
-            <h3>Features</h3>
-            <ul>
-              {project.features.map((feature) => <li key={feature}>{feature}</li>)}
-            </ul>
-          </section>
-          <section>
-            <h3>Architecture</h3>
-            <p>{project.architecture}</p>
-          </section>
-          <section>
-            <h3>Authentication</h3>
-            <p>{project.auth}</p>
-          </section>
-          <section>
-            <h3>Database</h3>
-            <p>{project.database}</p>
-          </section>
-          <section>
-            <h3>AI integration</h3>
-            <p>{project.aiIntegration}</p>
-          </section>
-          <section>
-            <h3>Challenges</h3>
-            <ul>
-              {project.challenges?.map((challenge) => <li key={challenge}>{challenge}</li>)}
-            </ul>
-          </section>
-          <section>
-            <h3>Future improvements</h3>
-            <ul>
-              {project.futureImprovements?.map((item) => <li key={item}>{item}</li>)}
-            </ul>
-          </section>
+          {hasText(project.longDescription) ? <p>{project.longDescription}</p> : null}
+          {hasText(project.problem) ? <section><h3>Problem</h3><p>{project.problem}</p></section> : null}
+          {hasText(project.solution) ? <section><h3>Solution</h3><p>{project.solution}</p></section> : null}
+          {hasItems(project.features) ? <section><h3>Features</h3><ul>{project.features.filter((feature) => feature.trim()).map((feature) => <li key={feature}>{feature}</li>)}</ul></section> : null}
+          {hasText(project.architecture) ? <section><h3>Architecture</h3><p>{project.architecture}</p></section> : null}
+          {hasText(project.auth) ? <section><h3>Authentication</h3><p>{project.auth}</p></section> : null}
+          {hasText(project.database) ? <section><h3>Database</h3><p>{project.database}</p></section> : null}
+          {hasText(project.aiIntegration) ? <section><h3>AI integration</h3><p>{project.aiIntegration}</p></section> : null}
+          {hasItems(project.challenges) ? <section><h3>Challenges</h3><ul>{project.challenges?.filter((challenge) => challenge.trim()).map((challenge) => <li key={challenge}>{challenge}</li>)}</ul></section> : null}
+          {hasItems(project.futureImprovements) ? <section><h3>Future improvements</h3><ul>{project.futureImprovements?.filter((item) => item.trim()).map((item) => <li key={item}>{item}</li>)}</ul></section> : null}
         </div>
       </article>
     </div>

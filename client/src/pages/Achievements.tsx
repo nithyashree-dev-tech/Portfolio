@@ -38,7 +38,7 @@ const Achievements = () => {
               <p className="eyebrow">{achievement.organization}</p>
               <h3>{achievement.title}</h3>
               <p>{achievement.description}</p>
-              <p className="muted">{achievement.date}</p>
+              {achievement.date ? <p className="muted">{achievement.date}</p> : null}
               {achievement.link ? (
                 <a href={achievement.link} target="_blank" rel="noreferrer">View link</a>
               ) : null}

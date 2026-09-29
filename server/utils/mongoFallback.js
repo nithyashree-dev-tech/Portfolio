@@ -45,6 +45,26 @@ const ensureData = async () => {
     ]);
   }
 
+  for (const seededProject of projectSeed) {
+    const project = await Project.findOne({ slug: seededProject.slug });
+    if (!project) continue;
+
+    let changed = false;
+    for (const field of ['problem', 'solution', 'architecture', 'auth', 'database', 'aiIntegration']) {
+      if (!project[field] && seededProject[field]) {
+        project[field] = seededProject[field];
+        changed = true;
+      }
+    }
+    for (const field of ['challenges', 'futureImprovements']) {
+      if ((!project[field] || project[field].length === 0) && seededProject[field]?.length) {
+        project[field] = seededProject[field];
+        changed = true;
+      }
+    }
+    if (changed) await project.save();
+  }
+
   fallbackData.projects = await Project.find().lean();
   fallbackData.certifications = await Certification.find().lean();
   fallbackData.skills = await Skill.find().sort({ order: 1 }).lean();
