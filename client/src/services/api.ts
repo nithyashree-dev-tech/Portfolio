@@ -1,6 +1,11 @@
 import type { ApiResponse, Achievement, Certification, ContactMessage, ExperienceItem, Profile, Project, Skill } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '');
+const configuredApiBase = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '');
+const API_BASE_URL = configuredApiBase && /^https?:\/\//i.test(configuredApiBase)
+  ? configuredApiBase
+  : configuredApiBase
+    ? `${window.location.origin}${configuredApiBase.startsWith('/') ? '' : '/'}${configuredApiBase}`
+    : '';
 const TOKEN_KEY = 'portfolio-admin-token';
 
 if (!API_BASE_URL) {
@@ -136,6 +141,7 @@ export const messageService = {
     method: 'POST',
     body: JSON.stringify(payload),
   }),
+  notify: (id: string) => request<ApiResponse<ContactMessage>>(`/messages/${id}/notify`, { method: 'POST' }),
   update: (id: string, payload: Partial<ContactMessage>) => request<ApiResponse<ContactMessage>>(`/messages/${id}`, {
     method: 'PUT',
     body: JSON.stringify(payload),

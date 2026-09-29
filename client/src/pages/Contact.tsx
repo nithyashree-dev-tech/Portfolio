@@ -36,9 +36,13 @@ const Contact = () => {
 
     try {
       setStatus('loading');
-      await messageService.create(form);
+      const response = await messageService.create(form);
       setStatus('success');
-      setFeedback('Your message has been sent successfully.');
+      setFeedback(response.data.emailDeliveryStatus === 'sent'
+        ? 'Your message was sent. An email notification has been delivered.'
+        : response.data.emailDeliveryStatus === 'failed'
+          ? 'Your message was saved, but email delivery failed. It is still available in the admin inbox.'
+          : 'Your message was saved in the admin inbox. Email notifications are not configured yet.');
       setForm({ name: '', email: '', subject: '', message: '' });
       setErrors({});
     } catch (error) {

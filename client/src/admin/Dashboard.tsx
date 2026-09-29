@@ -98,7 +98,7 @@ const Dashboard = () => {
     { label: 'Skills', value: skills.length, icon: Wrench },
     { label: 'Experience', value: experience.length, icon: BriefcaseBusiness },
     { label: 'Achievements', value: achievements.length, icon: Trophy },
-    { label: 'Unread Messages', value: messages.filter((message) => !message.status || message.status === 'unread' || message.status === 'new').length, icon: MessageSquareText },
+    { label: 'Unread Messages', value: messages.filter((message) => !message.status || message.status === 'unread').length, icon: MessageSquareText },
   ];
 
   const resetDraft = (tab: TabKey) => {
@@ -345,6 +345,17 @@ const Dashboard = () => {
     }
   };
 
+  const retryMessageNotification = async (id: string | undefined) => {
+    if (!id) return;
+    try {
+      const response = await messageService.notify(id);
+      setMessages((current) => current.map((item) => (item._id === id ? response.data : item)));
+      setError('');
+    } catch (notifyError) {
+      setError(notifyError instanceof Error ? notifyError.message : 'Unable to send the email notification.');
+    }
+  };
+
   const beginEdit = (tab: TabKey, item: Record<string, unknown>) => {
     const entry = Object.fromEntries(Object.entries(item).map(([key, value]) => [key, value ?? '']));
     setDraft({ ...(entry as DraftState) });
@@ -445,8 +456,10 @@ const Dashboard = () => {
           <p>{item.name} • {item.email}</p>
           <small>{item.message}</small>
           <p className="muted">Status: {item.status || 'unread'}</p>
+          <p className="muted">Email: {item.emailDeliveryStatus || 'not_configured'}{item.emailDeliveryError ? ` (${item.emailDeliveryError})` : ''}</p>
         </div>
         <div className="admin-actions">
+          {item.emailDeliveryStatus !== 'sent' ? <button type="button" className="button secondary small" onClick={() => void retryMessageNotification(item._id)}>Retry email</button> : null}
           {item.status !== 'read' ? <button type="button" className="button secondary small" onClick={() => void updateMessageStatus(item._id, 'read')}>Mark read</button> : null}
           {item.status !== 'archived' ? <button type="button" className="button secondary small" onClick={() => void updateMessageStatus(item._id, 'archived')}>Archive</button> : null}
           <button type="button" className="button ghost small" onClick={() => void handleDelete('messages', item._id)}>

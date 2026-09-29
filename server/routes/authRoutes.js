@@ -40,6 +40,9 @@ router.post(
 
     try {
       const normalizedEmail = email.toLowerCase();
+      if (normalizedEmail !== env.adminEmail) {
+        return res.status(401).json({ success: false, message: 'Invalid email or password', data: {} });
+      }
       let match = false;
       let role = 'admin';
 

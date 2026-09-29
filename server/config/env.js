@@ -6,16 +6,27 @@ const env = {
   port: Number(process.env.PORT || 5000),
   mongoUri: process.env.MONGODB_URI?.trim() || '',
   mongoDatabase: process.env.MONGODB_DATABASE?.trim() || '',
+  mongoDnsServers: (process.env.MONGODB_DNS_SERVERS || '')
+    .split(',')
+    .map((server) => server.trim())
+    .filter(Boolean),
   mongoServerSelectionTimeoutMs: Number(process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS || 10000),
   jwtSecret: process.env.JWT_SECRET || '',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '8h',
   authCookieMaxAgeMs: Number(process.env.AUTH_COOKIE_MAX_AGE_MS || 8 * 60 * 60 * 1000),
   adminEmail: process.env.ADMIN_EMAIL?.trim().toLowerCase() || '',
   adminPassword: process.env.ADMIN_PASSWORD || '',
-  clientOrigins: (process.env.CLIENT_URL || '')
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean),
+  contactEmail: process.env.CONTACT_EMAIL?.trim() || process.env.ADMIN_EMAIL?.trim() || '',
+  smtpHost: process.env.SMTP_HOST?.trim() || 'smtp.gmail.com',
+  smtpPort: Number(process.env.SMTP_PORT || 465),
+  smtpSecure: process.env.SMTP_SECURE ? process.env.SMTP_SECURE === 'true' : Number(process.env.SMTP_PORT || 465) === 465,
+  smtpUser: process.env.SMTP_USER?.trim() || process.env.ADMIN_EMAIL?.trim() || '',
+  smtpPassword: process.env.SMTP_PASSWORD || '',
+  smtpFrom: process.env.SMTP_FROM?.trim() || process.env.SMTP_USER?.trim() || process.env.ADMIN_EMAIL?.trim() || '',
+  clientOrigins: [...new Set([
+    ...(process.env.CLIENT_URL || '').split(','),
+    process.env.RENDER_EXTERNAL_URL || '',
+  ].map((origin) => origin.trim()).filter(Boolean))],
   apiRateLimitWindowMs: Number(process.env.API_RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000),
   apiRateLimitMax: Number(process.env.API_RATE_LIMIT_MAX || 100),
   loginRateLimitMax: Number(process.env.LOGIN_RATE_LIMIT_MAX || 10),

@@ -1,4 +1,5 @@
 const { env, validateEnv } = require('./config/env');
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -16,8 +17,8 @@ const seedRoutes = require('./routes/seedRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const { ensureData } = require('./utils/mongoFallback');
 const errorHandler = require('./middleware/errorHandler');
-const { Admin, Profile } = require('./models');
-const bcrypt = require('bcryptjs');
+const { Profile } = require('./models');
+const syncAdminCredentials = require('./utils/syncAdminCredentials');
 const { profileSeed } = require('./seed/seedData');
 
 const app = express();
@@ -60,6 +61,15 @@ app.use('/api/v1/messages', messageRoutes);
 app.use('/api/v1/seed', seedRoutes);
 app.use('/api/v1/profile', profileRoutes);
 
+const clientBuildPath = path.resolve(__dirname, '..', 'client', 'dist');
+app.use(express.static(clientBuildPath));
+app.get('/{*path}', (req, res, next) => {
+  if (req.path.startsWith('/api/')) return next();
+  return res.sendFile(path.join(clientBuildPath, 'index.html'), (error) => {
+    if (error) next(error);
+  });
+});
+
 app.use(errorHandler);
 
 validateEnv();
@@ -68,15 +78,8 @@ connectDB()
     try {
       await ensureData();
       if (connectDB.isDatabaseConnected()) {
-        await Admin.findOneAndUpdate(
-          { email: env.adminEmail },
-          {
-            email: env.adminEmail,
-            passwordHash: await bcrypt.hash(env.adminPassword, 12),
-            role: 'admin',
-          },
-          { upsert: true, new: true, setDefaultsOnInsert: true },
-        );
+        await syncAdminCredentials();
+        console.log('Admin credentials synchronized from environment.');
       }
       const existingProfile = await Profile.findOne().select('_id').lean();
       if (!existingProfile) await Profile.create(profileSeed);

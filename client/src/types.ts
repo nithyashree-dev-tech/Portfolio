@@ -67,7 +67,11 @@ export type ContactMessage = {
   email: string;
   subject: string;
   message: string;
-  status?: 'unread' | 'read' | 'archived' | 'new' | 'replied';
+  status?: 'unread' | 'read' | 'archived';
+  emailDeliveryStatus?: 'not_configured' | 'pending' | 'sent' | 'failed';
+  emailDeliveryError?: string;
+  emailAttemptedAt?: string | null;
+  emailSentAt?: string | null;
   createdAt?: string;
 };
 
