@@ -14,6 +14,7 @@ A full-stack portfolio website for an AI & Data Science engineering student focu
 - Project and certification detail pages
 - Contact form with validation and backend storage
 - Admin authentication and dashboard for content management
+- Public photo gallery with admin-managed JPG, PNG, and WebP uploads persisted in MongoDB GridFS
 - MongoDB-backed API and seed data
 - Dark/light theme and motion-aware accessibility
 
@@ -35,7 +36,7 @@ The API requires `MONGODB_URI` and will not connect to local MongoDB or start wi
 
 ## Deploy publicly on Render
 
-`render.yaml` configures one Render Node web service to build the Vite client and serve both the portfolio and Express API from the same public URL. Contact messages, portfolio data, and resume PDFs persist in MongoDB Atlas (GridFS for PDFs); a separate upload disk is not needed.
+`render.yaml` configures one Render Node web service to build the Vite client and serve both the portfolio and Express API from the same public URL. Contact messages, portfolio data, resumes, and gallery photos persist in MongoDB Atlas (GridFS for binary files); a separate upload disk is not needed.
 
 1. Push this repository to GitHub.
 2. In Render, choose **New + → Blueprint**, connect this repository, and apply the `render.yaml` Blueprint.

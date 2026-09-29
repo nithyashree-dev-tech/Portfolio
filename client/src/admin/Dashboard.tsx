@@ -84,6 +84,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingResume, setUploadingResume] = useState<'cloud' | 'software' | null>(null);
+  const [uploadingProfilePhoto, setUploadingProfilePhoto] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [workingId, setWorkingId] = useState<string | null>(null);
@@ -190,6 +191,26 @@ const Dashboard = () => {
       setError(uploadError instanceof Error ? uploadError.message : 'Unable to upload resume.');
     } finally {
       setUploadingResume(null);
+    }
+  };
+
+  const handleProfilePhotoUpload = async (file?: File) => {
+    if (!file) return;
+    setUploadingProfilePhoto(true);
+    setError('');
+    try {
+      const response = await profileService.uploadPhoto(file);
+      handleDraftChange('profileImage', response.data.imageUrl);
+      handleDraftChange('profileImageFileId', response.data.fileId);
+      setProfile((current) => current ? {
+        ...current,
+        profileImage: response.data.imageUrl,
+        profileImageFileId: response.data.fileId,
+      } : current);
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : 'Unable to upload profile photo.');
+    } finally {
+      setUploadingProfilePhoto(false);
     }
   };
 
@@ -624,7 +645,12 @@ const Dashboard = () => {
             <input type="file" accept="application/pdf,.pdf" onChange={(event) => void handleResumeUpload('software', event.target.files?.[0])} />
             <small>{uploadingResume === 'software' ? 'Uploading...' : draft.softwareResumeFileId ? 'Software resume stored in MongoDB.' : 'No software resume uploaded.'}</small>
           </label>
-          <label>Profile Image URL<input type="url" value={String(draft.profileImage || '')} onChange={(event) => handleDraftChange('profileImage', event.target.value)} /></label>
+          <label>
+            Profile Photo (JPG, PNG or WebP, up to 8 MB)
+            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void handleProfilePhotoUpload(event.target.files?.[0])} />
+            <small>{uploadingProfilePhoto ? 'Uploading...' : draft.profileImageFileId ? 'Photo stored in MongoDB. Upload another anytime to replace it.' : 'No profile photo uploaded yet.'}</small>
+          </label>
+          <label>Or use an existing image URL<input type="url" value={String(draft.profileImage || '')} onChange={(event) => handleDraftChange('profileImage', event.target.value)} /></label>
         </>
       );
     }

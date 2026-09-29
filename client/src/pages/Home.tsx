@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArrowRight, Download, GitBranch, Mail, BriefcaseBusiness } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { API_BASE_URL } from '../services/api';
 import { projects as fallbackProjects } from '../data/mockData';
 import { profileService, projectService } from '../services/api';
 import type { Profile, Project } from '../types';
@@ -36,6 +37,9 @@ const Home = () => {
   }, []);
 
   const featuredProject = projects[0] ?? fallbackProjects[0];
+  const profileImageUrl = profile?.profileImageFileId
+    ? `${API_BASE_URL}/profile/photo/${profile.profileImageFileId}`
+    : profile?.profileImage || '';
 
   return (
     <div className="page home-page">
@@ -74,15 +78,17 @@ const Home = () => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1, duration: 0.4 }}
         >
-          <div className="tech-card large">
-            <div className="tech-badge">Cloud</div>
-            <div className="tech-badge">Linux</div>
-            <div className="tech-badge">Data</div>
-            <div className="tech-grid">
-              <span>GCP</span>
-              <span>Linux</span>
-              <span>Python</span>
-              <span>MongoDB</span>
+          <div className="profile-photo-wrap">
+            {profileImageUrl ? (
+              <img className="profile-photo" src={profileImageUrl} alt={profile?.name || 'Portfolio owner'} />
+            ) : (
+              <div className="profile-photo profile-photo-placeholder" aria-label="Profile photo placeholder">
+                <span>{(profile?.name || 'M Nithya Shree').split(/\s+/).map((part) => part[0]).slice(0, 2).join('')}</span>
+              </div>
+            )}
+            <div className="profile-photo-caption">
+              <span>{profile?.professionalTitle || 'AI & Data Science Engineer'}</span>
+              <span>Cloud · Linux · Data</span>
             </div>
           </div>
         </motion.div>

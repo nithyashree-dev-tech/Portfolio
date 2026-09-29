@@ -100,6 +100,7 @@ export type Profile = {
   cloudResumeFileId?: string;
   softwareResumeFileId?: string;
   profileImage: string;
+  profileImageFileId?: string;
 };
 
 export type ApiResponse<T> = {

@@ -175,6 +175,14 @@ export const profileService = {
       body: formData,
     });
   },
+  uploadPhoto: (file: File) => {
+    const formData = new FormData();
+    formData.append('photo', file);
+    return request<ApiResponse<{ imageUrl: string; fileId: string }>>('/profile/photo', {
+      method: 'POST',
+      body: formData,
+    });
+  },
 };
 
 export const setAuthToken = (token: string) => {

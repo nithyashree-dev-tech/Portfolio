@@ -119,6 +119,7 @@ const profileSchema = new mongoose.Schema(
     cloudResumeFileId: { type: String, default: '' },
     softwareResumeFileId: { type: String, default: '' },
     profileImage: { type: String, default: '', trim: true },
+    profileImageFileId: { type: String, default: '' },
   },
   { timestamps: true },
 );
