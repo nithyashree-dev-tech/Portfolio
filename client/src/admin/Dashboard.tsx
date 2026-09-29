@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { BadgeCheck, BriefcaseBusiness, Image, MessageSquareText, Projector, Trash2, Trophy, Wrench } from 'lucide-react';
+import { BadgeCheck, BriefcaseBusiness, Image, MessageSquareText, Plus, Projector, Trash2, Trophy, Wrench } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import type { Achievement, Certification, ContactMessage, ExperienceItem, GalleryPhoto, Profile, Project, Skill } from '../types';
+import type { Achievement, Certification, ContactMessage, ExperienceItem, GalleryPhoto, PageContentField, Profile, Project, Skill } from '../types';
 import { achievementService, API_BASE_URL, authService, certificationService, experienceService, galleryService, getAuthToken, mediaService, messageService, profileService, projectService, skillService } from '../services/api';
+import { DEFAULT_PAGE_FIELDS, getPageFields, PAGE_CONTENT_PAGES, RESERVED_PAGE_FIELD_IDS } from '../data/pageContent';
 
-type TabKey = 'projects' | 'certifications' | 'skills' | 'experience' | 'achievements' | 'gallery' | 'messages' | 'profile';
+type TabKey = 'home' | 'about' | 'page-content' | 'projects' | 'certifications' | 'skills' | 'experience' | 'achievements' | 'gallery' | 'messages' | 'profile';
 
 type DraftState = Record<string, string | boolean>;
 
@@ -75,7 +76,16 @@ const emptyProfileDraft = {
   githubUrl: '', linkedinUrl: '', resumeUrl: '', cloudResumeFileId: '', softwareResumeFileId: '', profileImage: '',
 };
 
+const toScalarDraft = (value: Profile | null) => Object.fromEntries(
+  Object.entries(value || emptyProfileDraft).filter(([, fieldValue]) =>
+    typeof fieldValue === 'string' || typeof fieldValue === 'boolean',
+  ),
+) as DraftState;
+
 const dashboardTabs: { key: TabKey; label: string }[] = [
+  { key: 'home', label: 'Home' },
+  { key: 'about', label: 'About' },
+  { key: 'page-content', label: 'Page Content' },
   { key: 'projects', label: 'Projects' },
   { key: 'certifications', label: 'Certifications' },
   { key: 'skills', label: 'Skills' },
@@ -90,7 +100,10 @@ const Dashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const pathTab = location.pathname.split('/').pop() as TabKey;
-  const [activeTab, setActiveTab] = useState<TabKey>(dashboardTabs.some((tab) => tab.key === pathTab) ? pathTab : 'projects');
+  const activeTab: TabKey = dashboardTabs.some((tab) => tab.key === pathTab) ? pathTab : 'projects';
+  const initialContentPage = useRef(
+    PAGE_CONTENT_PAGES.some((page) => page.key === pathTab) ? pathTab : 'home',
+  );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingResume, setUploadingResume] = useState<'cloud' | 'software' | null>(null);
@@ -109,6 +122,10 @@ const Dashboard = () => {
   const stagedContentImages = useRef<string[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [draft, setDraft] = useState<DraftState>({ ...emptyProjectDraft });
+  const [selectedContentPage, setSelectedContentPage] = useState<string>(
+    PAGE_CONTENT_PAGES.some((page) => page.key === pathTab) ? pathTab : 'home',
+  );
+  const [pageFields, setPageFields] = useState<PageContentField[]>(DEFAULT_PAGE_FIELDS.home);
 
   const stats = [
     { label: 'Projects', value: projects.length, icon: Projector },
@@ -133,7 +150,13 @@ const Dashboard = () => {
       setPhotoFile(null);
     }
     if (tab === 'messages') setDraft({});
-    if (tab === 'profile') setDraft({ ...(profile || emptyProfileDraft) });
+    if (tab === 'profile') setDraft(toScalarDraft(profile));
+    if (tab === 'home' || tab === 'about') {
+      setSelectedContentPage(tab);
+      setPageFields(getPageFields(profile, tab));
+      setDraft(toScalarDraft(profile));
+    }
+    if (tab === 'page-content') setPageFields(getPageFields(profile, selectedContentPage));
     setWorkingId(null);
   };
 
@@ -165,7 +188,10 @@ const Dashboard = () => {
         setMessages(messagesResponse.data);
         setPhotos(photosResponse.data);
         setProfile(profileResponse.data);
-        setDraft({ ...(profileResponse.data || emptyProfileDraft) });
+        setDraft(toScalarDraft(profileResponse.data));
+        const initialPage = initialContentPage.current;
+        setSelectedContentPage(initialPage);
+        setPageFields(getPageFields(profileResponse.data, initialPage));
       } catch (dashboardError) {
         console.error('Dashboard load failed', dashboardError);
         navigate('/admin/login');
@@ -191,6 +217,44 @@ const Dashboard = () => {
   const handleDraftChange = (field: string, value: string | boolean) => {
     setDraft((current) => ({ ...current, [field]: value }));
   };
+
+  const handlePageFieldChange = (index: number, field: 'label' | 'value', value: string) => {
+    setPageFields((current) => current.map((item, itemIndex) =>
+      itemIndex === index ? { ...item, [field]: value } : item,
+    ));
+  };
+
+  const renderPageFieldsEditor = () => (
+    <>
+      {pageFields.map((field, index) => (
+        <div key={field.id} className="page-field-editor">
+          <div className="page-field-editor-header">
+            <strong>{field.label || 'New field'}</strong>
+            {!RESERVED_PAGE_FIELD_IDS.has(field.id) ? (
+              <button
+                type="button"
+                className="button ghost small"
+                aria-label={`Remove ${field.label || 'field'}`}
+                title="Remove field"
+                onClick={() => setPageFields((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+              >
+                <Trash2 size={14} />
+              </button>
+            ) : null}
+          </div>
+          <label>Field name<input required value={field.label} onChange={(event) => handlePageFieldChange(index, 'label', event.target.value)} /></label>
+          <label>Content<textarea required value={field.value} onChange={(event) => handlePageFieldChange(index, 'value', event.target.value)} /></label>
+        </div>
+      ))}
+      <button
+        type="button"
+        className="button secondary small"
+        onClick={() => setPageFields((current) => [...current, { id: `custom-${Date.now()}`, label: '', value: '' }])}
+      >
+        <Plus size={15} /> Add field
+      </button>
+    </>
+  );
 
   const handleResumeUpload = async (role: 'cloud' | 'software', file?: File) => {
     if (!file) return;
@@ -401,7 +465,33 @@ const Dashboard = () => {
         setProfile(updated.data);
       }
 
-      resetDraft(activeTab);
+      if (activeTab === 'home') {
+        const updated = await profileService.update({
+          name: String(draft.name || ''),
+          professionalTitle: String(draft.professionalTitle || ''),
+          shortBio: String(draft.shortBio || ''),
+          email: String(draft.email || ''),
+          githubUrl: String(draft.githubUrl || ''),
+          linkedinUrl: String(draft.linkedinUrl || ''),
+          profileImage: String(draft.profileImage || ''),
+          pageContent: { ...(profile?.pageContent || {}), home: pageFields },
+        });
+        setProfile(updated.data);
+      }
+
+      if (activeTab === 'about' || activeTab === 'page-content') {
+        const page = activeTab === 'about' ? 'about' : selectedContentPage;
+        const updated = await profileService.update({
+          pageContent: { ...(profile?.pageContent || {}), [page]: pageFields },
+        });
+        setProfile(updated.data);
+      }
+
+      if (activeTab === 'home' || activeTab === 'about' || activeTab === 'page-content') {
+        setWorkingId(null);
+      } else {
+        resetDraft(activeTab);
+      }
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Unable to save changes.');
     } finally {
@@ -467,10 +557,14 @@ const Dashboard = () => {
     const entry = Object.fromEntries(Object.entries(item).map(([key, value]) => [key, value ?? '']));
     setDraft({ ...(entry as DraftState) });
     setWorkingId(String(item._id || ''));
-    setActiveTab(tab);
+    navigate(`/admin/${tab}`);
   };
 
   const renderList = () => {
+    if (activeTab === 'home' || activeTab === 'about' || activeTab === 'page-content') {
+      return <p className="muted">Edit the fields in the panel to update this page.</p>;
+    }
+
     if (activeTab === 'projects') {
       return projects.map((project) => (
         <div key={project._id ?? project.slug} className="card admin-item">
@@ -595,6 +689,50 @@ const Dashboard = () => {
   };
 
   const renderFormFields = () => {
+    if (activeTab === 'home') {
+      return (
+        <>
+          <label>Name<input required value={String(draft.name || '')} onChange={(event) => handleDraftChange('name', event.target.value)} /></label>
+          <label>Professional title<input value={String(draft.professionalTitle || '')} onChange={(event) => handleDraftChange('professionalTitle', event.target.value)} /></label>
+          <label>Introduction<textarea value={String(draft.shortBio || '')} onChange={(event) => handleDraftChange('shortBio', event.target.value)} /></label>
+          <label>Email<input type="email" value={String(draft.email || '')} onChange={(event) => handleDraftChange('email', event.target.value)} /></label>
+          <label>GitHub URL<input type="url" value={String(draft.githubUrl || '')} onChange={(event) => handleDraftChange('githubUrl', event.target.value)} /></label>
+          <label>LinkedIn URL<input type="url" value={String(draft.linkedinUrl || '')} onChange={(event) => handleDraftChange('linkedinUrl', event.target.value)} /></label>
+          <label>
+            Profile photo (JPG, PNG or WebP, up to 8 MB)
+            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void handleProfilePhotoUpload(event.target.files?.[0])} />
+            <small>{uploadingProfilePhoto ? 'Uploading...' : draft.profileImageFileId ? 'Photo stored in MongoDB. Upload another anytime to replace it.' : 'No profile photo uploaded yet.'}</small>
+          </label>
+          <label>Or use an existing image URL<input type="url" value={String(draft.profileImage || '')} onChange={(event) => handleDraftChange('profileImage', event.target.value)} /></label>
+          <h4>Home feature strip and custom fields</h4>
+          {renderPageFieldsEditor()}
+        </>
+      );
+    }
+
+    if (activeTab === 'about') {
+      return <>{renderPageFieldsEditor()}</>;
+    }
+
+    if (activeTab === 'page-content') {
+      return (
+        <>
+          <label>Portfolio page
+            <select
+              value={selectedContentPage}
+              onChange={(event) => {
+                setSelectedContentPage(event.target.value);
+                setPageFields(getPageFields(profile, event.target.value));
+              }}
+            >
+              {PAGE_CONTENT_PAGES.map((page) => <option key={page.key} value={page.key}>{page.label}</option>)}
+            </select>
+          </label>
+          {renderPageFieldsEditor()}
+        </>
+      );
+    }
+
     if (activeTab === 'gallery') {
       return (
         <>
@@ -780,8 +918,8 @@ const Dashboard = () => {
               type="button"
               className={`tab-button ${activeTab === tab.key ? 'active' : ''}`}
               onClick={() => {
-                setActiveTab(tab.key);
                 resetDraft(tab.key);
+                navigate(`/admin/${tab.key}`);
               }}
             >
               {tab.label}

@@ -26,6 +26,7 @@ const env = {
   clientOrigins: [...new Set([
     ...(process.env.CLIENT_URL || '').split(','),
     process.env.RENDER_EXTERNAL_URL || '',
+    ...(process.env.NODE_ENV === 'production' ? [] : ['http://localhost:5173', 'http://127.0.0.1:5173']),
   ].map((origin) => origin.trim()).filter(Boolean))],
   apiRateLimitWindowMs: Number(process.env.API_RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000),
   apiRateLimitMax: Number(process.env.API_RATE_LIMIT_MAX || 100),

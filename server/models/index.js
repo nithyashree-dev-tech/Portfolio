@@ -120,6 +120,7 @@ const profileSchema = new mongoose.Schema(
     softwareResumeFileId: { type: String, default: '' },
     profileImage: { type: String, default: '', trim: true },
     profileImageFileId: { type: String, default: '' },
+    pageContent: { type: mongoose.Schema.Types.Mixed, default: {} },
   },
   { timestamps: true },
 );

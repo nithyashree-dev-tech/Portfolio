@@ -28,7 +28,7 @@ const profilePhotoUpload = multer({
   },
 });
 
-const profileFields = ['name', 'professionalTitle', 'shortBio', 'longBio', 'email', 'location', 'githubUrl', 'linkedinUrl', 'resumeUrl', 'cloudResumeUrl', 'softwareResumeUrl', 'profileImage'];
+const profileFields = ['name', 'professionalTitle', 'shortBio', 'longBio', 'email', 'location', 'githubUrl', 'linkedinUrl', 'resumeUrl', 'cloudResumeUrl', 'softwareResumeUrl', 'profileImage', 'pageContent'];
 const pickProfileFields = (body) => Object.fromEntries(profileFields.filter((field) => body[field] !== undefined).map((field) => [field, body[field]]));
 const resumeFields = { cloud: 'cloudResumeUrl', software: 'softwareResumeUrl' };
 const resumeFileFields = { cloud: 'cloudResumeFileId', software: 'softwareResumeFileId' };

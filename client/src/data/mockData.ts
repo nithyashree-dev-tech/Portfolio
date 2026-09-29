@@ -110,5 +110,6 @@ export const navItems = [
   { label: 'Certifications', href: '/certifications' },
   { label: 'Photos', href: '/photos' },
   { label: 'Experience', href: '/experience' },
+  { label: 'Achievements', href: '/achievements' },
   { label: 'Contact', href: '/contact' },
 ];

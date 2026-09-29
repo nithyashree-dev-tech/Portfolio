@@ -86,6 +86,12 @@ export type GalleryPhoto = {
   imageUrl: string;
 };
 
+export type PageContentField = {
+  id: string;
+  label: string;
+  value: string;
+};
+
 export type Profile = {
   _id?: string;
   name: string;
@@ -103,6 +109,7 @@ export type Profile = {
   softwareResumeFileId?: string;
   profileImage: string;
   profileImageFileId?: string;
+  pageContent?: Record<string, PageContentField[]>;
 };
 
 export type ApiResponse<T> = {

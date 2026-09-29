@@ -6,6 +6,7 @@ import { API_BASE_URL } from '../services/api';
 import { projects as fallbackProjects } from '../data/mockData';
 import { profileService, projectService } from '../services/api';
 import type { Profile, Project } from '../types';
+import { getPageFieldValue } from '../data/pageContent';
 
 const Home = () => {
   const [projects, setProjects] = useState<Project[]>(fallbackProjects);
@@ -97,15 +98,15 @@ const Home = () => {
       <section className="container feature-panel">
         <div className="feature-box">
           <strong>Focus</strong>
-          <span>Cloud & Linux</span>
+          <span>{getPageFieldValue(profile, 'home', 'focus', 'Cloud & Linux')}</span>
         </div>
         <div className="feature-box">
           <strong>Skills</strong>
-          <span>Networking & Data</span>
+          <span>{getPageFieldValue(profile, 'home', 'skills', 'Networking & Data')}</span>
         </div>
         <div className="feature-box">
           <strong>Approach</strong>
-          <span>Secure & Scalable</span>
+          <span>{getPageFieldValue(profile, 'home', 'approach', 'Secure & Scalable')}</span>
         </div>
       </section>
 

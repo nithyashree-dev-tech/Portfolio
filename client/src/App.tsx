@@ -16,6 +16,7 @@ import Photos from './pages/Photos';
 import AdminLogin from './admin/Login';
 import AdminDashboard from './admin/Dashboard';
 import ProtectedRoute from './admin/ProtectedRoute';
+import PageCustomFields from './components/PageCustomFields';
 
 function AppContent() {
   return (
@@ -44,6 +45,9 @@ function AppContent() {
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route element={<ProtectedRoute />}>
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path="/admin/home" element={<AdminDashboard />} />
+                <Route path="/admin/about" element={<AdminDashboard />} />
+                <Route path="/admin/page-content" element={<AdminDashboard />} />
                 <Route path="/admin/projects" element={<AdminDashboard />} />
                 <Route path="/admin/certifications" element={<AdminDashboard />} />
                 <Route path="/admin/gallery" element={<AdminDashboard />} />
@@ -54,6 +58,7 @@ function AppContent() {
                 <Route path="/admin/profile" element={<AdminDashboard />} />
               </Route>
             </Routes>
+            <PageCustomFields />
           </motion.div>
         </AnimatePresence>
       </main>
