@@ -15,6 +15,7 @@ const achievementRoutes = require('./routes/achievementRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const seedRoutes = require('./routes/seedRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const galleryRoutes = require('./routes/galleryRoutes');
 const { ensureData } = require('./utils/mongoFallback');
 const errorHandler = require('./middleware/errorHandler');
 const { Profile } = require('./models');
@@ -66,6 +67,7 @@ app.use('/api/v1/achievements', achievementRoutes);
 app.use('/api/v1/messages', messageRoutes);
 app.use('/api/v1/seed', seedRoutes);
 app.use('/api/v1/profile', profileRoutes);
+app.use('/api/v1/gallery', galleryRoutes);
 
 const clientBuildPath = path.resolve(__dirname, '..', 'client', 'dist');
 app.use(express.static(clientBuildPath));

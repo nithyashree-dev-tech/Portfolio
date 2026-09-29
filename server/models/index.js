@@ -123,6 +123,16 @@ const profileSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+const galleryPhotoSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true, trim: true, maxlength: 120 },
+    caption: { type: String, default: '', trim: true, maxlength: 500 },
+    contentType: { type: String, enum: ['image/jpeg', 'image/png', 'image/webp'], required: true },
+    gridFsId: { type: String, required: true },
+  },
+  { timestamps: true },
+);
+
 const Admin = mongoose.model('Admin', adminSchema);
 const Project = mongoose.model('Project', projectSchema);
 const Certification = mongoose.model('Certification', certificationSchema);
@@ -131,6 +141,7 @@ const Experience = mongoose.model('Experience', experienceSchema);
 const Achievement = mongoose.model('Achievement', achievementSchema);
 const Message = mongoose.model('Message', messageSchema);
 const Profile = mongoose.model('Profile', profileSchema);
+const GalleryPhoto = mongoose.model('GalleryPhoto', galleryPhotoSchema);
 
 module.exports = {
   Admin,
@@ -141,4 +152,5 @@ module.exports = {
   Achievement,
   Message,
   Profile,
+  GalleryPhoto,
 };
