@@ -48,6 +48,7 @@ function AppContent() {
                 <Route path="/admin/home" element={<AdminDashboard />} />
                 <Route path="/admin/about" element={<AdminDashboard />} />
                 <Route path="/admin/page-content" element={<AdminDashboard />} />
+                <Route path="/admin/page-content/:page" element={<AdminDashboard />} />
                 <Route path="/admin/projects" element={<AdminDashboard />} />
                 <Route path="/admin/certifications" element={<AdminDashboard />} />
                 <Route path="/admin/gallery" element={<AdminDashboard />} />

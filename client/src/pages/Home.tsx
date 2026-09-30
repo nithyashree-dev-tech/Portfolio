@@ -6,7 +6,7 @@ import { API_BASE_URL } from '../services/api';
 import { projects as fallbackProjects } from '../data/mockData';
 import { profileService, projectService } from '../services/api';
 import type { Profile, Project } from '../types';
-import { getPageFieldValue } from '../data/pageContent';
+import { getPageField } from '../data/pageContent';
 
 const Home = () => {
   const [projects, setProjects] = useState<Project[]>(fallbackProjects);
@@ -41,6 +41,9 @@ const Home = () => {
   const profileImageUrl = profile?.profileImageFileId
     ? `${API_BASE_URL}/profile/photo/${profile.profileImageFileId}`
     : profile?.profileImage || '';
+  const homeFeatures = ['focus', 'skills', 'approach']
+    .map((id) => getPageField(profile, 'home', id))
+    .filter((field): field is NonNullable<typeof field> => Boolean(field && field.label.trim() && field.value.trim()));
 
   return (
     <div className="page home-page">
@@ -95,20 +98,16 @@ const Home = () => {
         </motion.div>
       </section>
 
-      <section className="container feature-panel">
-        <div className="feature-box">
-          <strong>Focus</strong>
-          <span>{getPageFieldValue(profile, 'home', 'focus', 'Cloud & Linux')}</span>
-        </div>
-        <div className="feature-box">
-          <strong>Skills</strong>
-          <span>{getPageFieldValue(profile, 'home', 'skills', 'Networking & Data')}</span>
-        </div>
-        <div className="feature-box">
-          <strong>Approach</strong>
-          <span>{getPageFieldValue(profile, 'home', 'approach', 'Secure & Scalable')}</span>
-        </div>
-      </section>
+      {homeFeatures.length ? (
+        <section className="container feature-panel">
+          {homeFeatures.map((field) => (
+            <div key={field.id} className="feature-box">
+              <strong>{field.label}</strong>
+              <span>{field.value}</span>
+            </div>
+          ))}
+        </section>
+      ) : null}
 
       <section className="container section-block">
         <div className="section-head-row">

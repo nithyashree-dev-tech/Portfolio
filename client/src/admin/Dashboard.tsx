@@ -3,7 +3,7 @@ import { BadgeCheck, BriefcaseBusiness, Image, MessageSquareText, Plus, Projecto
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { Achievement, Certification, ContactMessage, ExperienceItem, GalleryPhoto, PageContentField, Profile, Project, Skill } from '../types';
 import { achievementService, API_BASE_URL, authService, certificationService, experienceService, galleryService, getAuthToken, mediaService, messageService, profileService, projectService, skillService } from '../services/api';
-import { DEFAULT_PAGE_FIELDS, getPageFields, PAGE_CONTENT_PAGES, RESERVED_PAGE_FIELD_IDS } from '../data/pageContent';
+import { DEFAULT_PAGE_FIELDS, getPageFields, PAGE_CONTENT_PAGES } from '../data/pageContent';
 
 type TabKey = 'home' | 'about' | 'page-content' | 'projects' | 'certifications' | 'skills' | 'experience' | 'achievements' | 'gallery' | 'messages' | 'profile';
 
@@ -99,10 +99,13 @@ const dashboardTabs: { key: TabKey; label: string }[] = [
 const Dashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const pathTab = location.pathname.split('/').pop() as TabKey;
+  const pathSegments = location.pathname.split('/').filter(Boolean);
+  const isPageContentRoute = pathSegments.at(-2) === 'page-content';
+  const requestedPage = pathSegments.at(-1) || 'home';
+  const pathTab = (isPageContentRoute ? 'page-content' : requestedPage) as TabKey;
   const activeTab: TabKey = dashboardTabs.some((tab) => tab.key === pathTab) ? pathTab : 'projects';
   const initialContentPage = useRef(
-    PAGE_CONTENT_PAGES.some((page) => page.key === pathTab) ? pathTab : 'home',
+    PAGE_CONTENT_PAGES.find((page) => page.key === requestedPage)?.key || 'home',
   );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -230,7 +233,6 @@ const Dashboard = () => {
         <div key={field.id} className="page-field-editor">
           <div className="page-field-editor-header">
             <strong>{field.label || 'New field'}</strong>
-            {!RESERVED_PAGE_FIELD_IDS.has(field.id) ? (
               <button
                 type="button"
                 className="button ghost small"
@@ -240,7 +242,6 @@ const Dashboard = () => {
               >
                 <Trash2 size={14} />
               </button>
-            ) : null}
           </div>
           <label>Field name<input required value={field.label} onChange={(event) => handlePageFieldChange(index, 'label', event.target.value)} /></label>
           <label>Content<textarea required value={field.value} onChange={(event) => handlePageFieldChange(index, 'value', event.target.value)} /></label>
@@ -723,6 +724,7 @@ const Dashboard = () => {
               onChange={(event) => {
                 setSelectedContentPage(event.target.value);
                 setPageFields(getPageFields(profile, event.target.value));
+                navigate(`/admin/page-content/${event.target.value}`);
               }}
             >
               {PAGE_CONTENT_PAGES.map((page) => <option key={page.key} value={page.key}>{page.label}</option>)}

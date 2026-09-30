@@ -40,8 +40,14 @@ export const DEFAULT_PAGE_FIELDS: Record<string, PageContentField[]> = {
 export const getPageFields = (profile: Profile | null, page: string): PageContentField[] =>
   profile?.pageContent?.[page] ?? DEFAULT_PAGE_FIELDS[page] ?? [];
 
-export const getPageFieldValue = (profile: Profile | null, page: string, id: string, fallback: string) =>
-  getPageFields(profile, page).find((field) => field.id === id)?.value ?? fallback;
+export const getPageField = (profile: Profile | null, page: string, id: string) =>
+  getPageFields(profile, page).find((field) => field.id === id);
+
+export const getPageFieldValue = (profile: Profile | null, page: string, id: string, fallback: string) => {
+  const pageFields = profile?.pageContent?.[page];
+  if (pageFields) return pageFields.find((field) => field.id === id)?.value ?? '';
+  return DEFAULT_PAGE_FIELDS[page]?.find((field) => field.id === id)?.value ?? fallback;
+};
 
 export const RESERVED_PAGE_FIELD_IDS = new Set([
   ...DEFAULT_PAGE_FIELDS.home.map((field) => field.id),

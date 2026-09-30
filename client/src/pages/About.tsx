@@ -7,56 +7,81 @@ import { getPageFieldValue } from '../data/pageContent';
 const About = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
 
+  const aboutTitle = getPageFieldValue(profile, 'about', 'title', '');
+  const aboutDescription = getPageFieldValue(profile, 'about', 'description', '');
+  const introTitle = getPageFieldValue(profile, 'about', 'introTitle', '');
+  const introText = getPageFieldValue(profile, 'about', 'introText', '');
+  const educationTitle = getPageFieldValue(profile, 'about', 'educationTitle', '');
+  const educationProgram = getPageFieldValue(profile, 'about', 'educationProgram', '');
+  const educationInstitution = getPageFieldValue(profile, 'about', 'educationInstitution', '');
+  const educationScore = getPageFieldValue(profile, 'about', 'educationScore', '');
+  const careerTitle = getPageFieldValue(profile, 'about', 'careerTitle', '');
+  const careerText = getPageFieldValue(profile, 'about', 'careerText', '');
+  const technicalTitle = getPageFieldValue(profile, 'about', 'technicalTitle', '');
+  const technicalText = getPageFieldValue(profile, 'about', 'technicalText', '');
+  const strengthsTitle = getPageFieldValue(profile, 'about', 'strengthsTitle', '');
+  const strengthsText = getPageFieldValue(profile, 'about', 'strengthsText', '');
+
   useEffect(() => {
     void profileService.get().then((response) => setProfile(response.data)).catch(() => undefined);
   }, []);
 
   return (
   <div className="page container">
-    <SectionHeader
-      eyebrow="About"
-      title={getPageFieldValue(profile, 'about', 'title', 'Building reliable systems and data-driven digital experiences')}
-      description={getPageFieldValue(profile, 'about', 'description', 'I am a B.Tech AI & Data Science engineering student with a strong interest in cloud computing, Linux system administration, networking, cybersecurity, and scalable technology solutions.')}
-    />
+    {aboutTitle || aboutDescription ? (
+      <SectionHeader eyebrow="About" title={aboutTitle} description={aboutDescription} />
+    ) : null}
 
-    <div className="about-grid two-column">
-      <div className="card">
-        <h3>{getPageFieldValue(profile, 'about', 'introTitle', 'Professional Introduction')}</h3>
-        <p>
-          {getPageFieldValue(profile, 'about', 'introText', 'I enjoy solving real-world technical problems through automation, infrastructure understanding, and data-informed decision-making. My focus is on building secure, reliable systems that scale smoothly while maintaining clear performance and operational visibility.')}
-        </p>
+    {introTitle || introText || educationTitle || educationProgram || educationInstitution || educationScore ? (
+      <div className="about-grid two-column">
+        {introTitle || introText ? (
+          <div className="card">
+            {introTitle ? <h3>{introTitle}</h3> : null}
+            {introText ? <p>{introText}</p> : null}
+          </div>
+        ) : null}
+        {educationTitle || educationProgram || educationInstitution || educationScore ? (
+          <div className="card">
+            {educationTitle ? <h3>{educationTitle}</h3> : null}
+            {educationProgram ? <p><strong>{educationProgram}</strong></p> : null}
+            {educationInstitution ? <p>{educationInstitution}</p> : null}
+            {educationScore ? <p>{educationScore}</p> : null}
+          </div>
+        ) : null}
       </div>
-      <div className="card">
-        <h3>{getPageFieldValue(profile, 'about', 'educationTitle', 'Education')}</h3>
-        <p><strong>{getPageFieldValue(profile, 'about', 'educationProgram', 'B.Tech AI & Data Science')}</strong></p>
-        <p>{getPageFieldValue(profile, 'about', 'educationInstitution', 'Jayalakshmi Institute of Technology')}</p>
-        <p>{getPageFieldValue(profile, 'about', 'educationScore', 'CGPA: 8.8')}</p>
-      </div>
-    </div>
+    ) : null}
 
-    <div className="timeline stacked">
-      <div className="timeline-item card">
-        <span className="timeline-year">Current</span>
-        <div>
-          <h3>{getPageFieldValue(profile, 'about', 'careerTitle', 'Career Interests')}</h3>
-          <p>{getPageFieldValue(profile, 'about', 'careerText', 'Cloud engineering, Linux administration, network operations, cybersecurity, data analytics, and full-stack system problem solving.')}</p>
-        </div>
+    {careerTitle || careerText || technicalTitle || technicalText || strengthsTitle || strengthsText ? (
+      <div className="timeline stacked">
+        {careerTitle || careerText ? (
+          <div className="timeline-item card">
+            <span className="timeline-year">Current</span>
+            <div>
+              {careerTitle ? <h3>{careerTitle}</h3> : null}
+              {careerText ? <p>{careerText}</p> : null}
+            </div>
+          </div>
+        ) : null}
+        {technicalTitle || technicalText ? (
+          <div className="timeline-item card">
+            <span className="timeline-year">Learning</span>
+            <div>
+              {technicalTitle ? <h3>{technicalTitle}</h3> : null}
+              {technicalText ? <p>{technicalText}</p> : null}
+            </div>
+          </div>
+        ) : null}
+        {strengthsTitle || strengthsText ? (
+          <div className="timeline-item card">
+            <span className="timeline-year">Strength</span>
+            <div>
+              {strengthsTitle ? <h3>{strengthsTitle}</h3> : null}
+              {strengthsText ? <p>{strengthsText}</p> : null}
+            </div>
+          </div>
+        ) : null}
       </div>
-      <div className="timeline-item card">
-        <span className="timeline-year">Learning</span>
-        <div>
-          <h3>{getPageFieldValue(profile, 'about', 'technicalTitle', 'Technical Interests')}</h3>
-          <p>{getPageFieldValue(profile, 'about', 'technicalText', 'Cloud infrastructure, secure deployment practices, system automation, networking fundamentals, and data-driven insights.')}</p>
-        </div>
-      </div>
-      <div className="timeline-item card">
-        <span className="timeline-year">Strength</span>
-        <div>
-          <h3>{getPageFieldValue(profile, 'about', 'strengthsTitle', 'Strengths')}</h3>
-          <p>{getPageFieldValue(profile, 'about', 'strengthsText', 'Curious mindset, analytical thinking, structured learning, problem solving, and a strong desire to build practical technology solutions.')}</p>
-        </div>
-      </div>
-    </div>
+    ) : null}
   </div>
   );
 };
